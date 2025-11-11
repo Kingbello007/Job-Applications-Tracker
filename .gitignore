@@ -1,0 +1,9 @@
+# n8n runtime state (do NOT commit)
+.n8n/
+database.sqlite
+*.sqlite
+encryption.key
+.env
+
+# Do not commit exported n8n credentials
+n8n/credentials/**
