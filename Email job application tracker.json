@@ -1,0 +1,290 @@
+{
+  "name": "Email job application tracker",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {},
+        "options": {}
+      },
+      "type": "n8n-nodes-base.microsoftOutlookTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "ac8b3e36-8853-48c1-9827-78000042d249",
+      "name": "Microsoft Outlook Trigger",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "MCbOlm2IkHVRoXAz",
+          "name": "outlook account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=from: {{ $json.from }}\nSubject:{{ $json.subject }}\nMessage:{{ $json.bodyPreview }}\n"
+            }
+          ]
+        },
+        "options": {
+          "systemMessage": "You are an helpful assistant who will reply either \"YES\" or \"NO\" whether or not the given email is a job application. Only emails that a user has applied to should count. If the email is regarding new job offers or next steps in a job application process, do not count it."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "2bb5cf8a-a693-42d1-964d-72c5be78dfa3",
+      "name": "Message a model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "UriKrlmipouiz0ez",
+          "name": "tracker gemini api key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ff2921bb-d996-479f-9e90-c7b640779718",
+              "leftValue": "={{ $json.content.parts[0].text }}",
+              "rightValue": "YES",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        560,
+        0
+      ],
+      "id": "33553203-de3c-4f6e-b8da-8a495b251998",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Subject:{{ $('Microsoft Outlook Trigger').item.json.subject }}\nDate: {{ $execution.id }}\nFrom:{{ $('Microsoft Outlook Trigger').item.json.from }}\n\n\nBody:{{ $('Microsoft Outlook Trigger').item.json.bodyPreview }}",
+        "options": {
+          "systemMessage": "You are a helpful assistant who will get an email about a job application, with that email, you need to use the google sheets tool to add the necessary info to the sheet."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        768,
+        -16
+      ],
+      "id": "518ee315-0e96-48b0-a679-59909d1a44ba",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        640,
+        192
+      ],
+      "id": "e0a2d892-cbaf-4617-86a4-c31a5c1800c0",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "UriKrlmipouiz0ez",
+          "name": "tracker gemini api key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "With this tool you will add new entries for jobs that have been applied to. You will need to fill cells for Company\tJob Title\tStatus\tApplied",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1dXiwcGxLt8fSUshQDbopDoiLi5NIx2TuKzSXX71J1xI",
+          "mode": "list",
+          "cachedResultName": "Job application tracker",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1dXiwcGxLt8fSUshQDbopDoiLi5NIx2TuKzSXX71J1xI/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1dXiwcGxLt8fSUshQDbopDoiLi5NIx2TuKzSXX71J1xI/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Company": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Company', ``, 'string') }}",
+            "Job Title": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Job_Title', ``, 'string') }}",
+            "Status": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Status', ``, 'string') }}",
+            "Applied": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Applied', ``, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Job Title",
+              "displayName": "Job Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Applied",
+              "displayName": "Applied",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        912,
+        320
+      ],
+      "id": "b792565b-9279-4caf-9b02-bbc09c765f21",
+      "name": "Append row in sheet in Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YCMxZyzcWgenqnA1",
+          "name": "Add job application to sheets"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Microsoft Outlook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet in Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "996f9577-e9ee-4cff-b1f1-4ef22b38040c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c43f94cc0eab6ae46362e09a959d5d9127606b970466b29254fd2b59a916cc13"
+  },
+  "id": "2EwWf7RFWr7FEpVl",
+  "tags": []
+}
